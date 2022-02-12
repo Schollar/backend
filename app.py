@@ -1,5 +1,5 @@
 from flask import Flask, request, Response
-import dbhelpers
+import dbinteractions as db
 import json
 import traceback
 import sys
@@ -7,68 +7,53 @@ import sys
 app = Flask(__name__)
 
 
-@app.get("/api/villain")
-def get_villains():
-    villains = dbhelpers.run_select_statement(
-        "SELECT name, description, image_url, id FROM villain", [])
-
-    if(villains == None):
-        return Response("Failed to GET villains", mimetype="text/plain", status=500)
-    else:
-        villain_json = json.dumps(villains, default=str)
-        return Response(villain_json, mimetype="application/json", status=200)
-
-
-@app.post("/api/villain")
-def post_villain():
+@app.get("/api/line")
+def get_line():
     try:
-        villain_name = request.json['name']
-        villain_desc = request.json['desc']
-        villain_img = request.json['img']
-    except:
-        traceback.print_exc()
-        print("DO BETTER ERROR CATCHING")
-        return Response("Data Error", mimetype="text/plain", status=400)
-    villain_id = dbhelpers.run_insert_statement("INSERT INTO villain(name, description, image_url) VALUES (?,?,?)",
-                                                [villain_name, villain_desc, villain_img])
-    if(villain_id == None):
-        return Response("DB Error, Sorry!", mimetype="text/plain", status=500)
-    else:
-        villain = [villain_name, villain_desc, villain_img, villain_id]
-        villain_json = json.dumps(villain, default=str)
-        return Response(villain_json, mimetype="application/json", status=201)
-
-
-@app.delete("/api/villain")
-def delete_villain():
-    try:
-        villain_id = int(request.json['id'])
+        lines, success = db.get_lines()
+        if(success):
+            lines_json = json.dumps(lines, default=str)
+            return Response(lines_json, mimetype="application/json", status=200)
+        else:
+            return Response("Lines Failure", mimetype="plain/text", status=422)
     except:
         traceback.print_exc()
         print("DO BETTER ERROR CATCHING")
         return Response("Data Error", mimetype="text/plain", status=400)
 
-    rows = dbhelpers.run_delete_statement(
-        "DELETE FROM villain WHERE id=?", [villain_id, ])
-    if(rows == 1):
-        return Response("Villain Deleted", mimetype="text/plain", status=200)
+
+@app.post("/api/line")
+def post_line():
+    id, success = None, False
+    try:
+        line = request.json['content']
+        id, success = db.make_line(line)
+    except:
+        traceback.print_exc()
+        print("DO BETTER ERROR CATCHING")
+        return Response("Data Error", mimetype="text/plain", status=400)
+    if(success):
+        return Response(f"Post {id} Success!", mimetype="plain/text", status=201)
     else:
-        return Response("DB Error, Sorry!", mimetype="text/plain", status=500)
+        return Response("Post Failure", mimetype="plain/text", status=422)
 
 
 if(len(sys.argv) > 1):
     mode = sys.argv[1]
 else:
-    print("No mode argument, please pass a mode argument when invoking the file")
+    print("You must pass a mode to run this python script. Either testing or production. For example:")
+    print("python app.py testing")
     exit()
 
-if(mode == "production"):
-    import bjoern  # type: ignore
-    bjoern.run(app, "0.0.0.0", 5015)
-elif(mode == "testing"):
+if(mode == "testing"):
+    print("Running in testing mode!")
     from flask_cors import CORS
     CORS(app)
     app.run(debug=True)
+elif(mode == "production"):
+    print("Running in production mode")
+    import bjoern  # type: ignore
+    bjoern.run(app, "0.0.0.0", 5005)
 else:
-    print("Invalid mode, please select either 'production' or 'testing'")
-    exit()
+    print("Please run with either testing or production. Example:")
+    print("python app.py production")
