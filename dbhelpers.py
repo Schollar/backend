@@ -43,6 +43,10 @@ def run_select_statement(sql, params):
         cursor.execute(sql, params)
         result = cursor.fetchall()
     # TODO Do a better job of catching more specific errors! Might need to find a way to return error-specific results
+    except mariadb.OperationalError:
+        print('Something is wrong with the db!')
+    except mariadb.ProgrammingError:
+        print('Error running DB query')
     except:
         traceback.print_exc()
         print("DO BETTER ERROR CATCHING")
@@ -63,6 +67,10 @@ def run_insert_statement(sql, params):
         # In this example we always return the lastrowid for an INSERT
         # This might not always be what you need / want
         result = cursor.lastrowid
+    except mariadb.OperationalError:
+        print('Something is wrong with the db!')
+    except mariadb.ProgrammingError:
+        print('Error running DB query')
     except:
         traceback.print_exc()
         print("DO BETTER ERROR CATCHING")
@@ -81,6 +89,10 @@ def run_delete_statement(sql, params):
         # In this example we always return the rowcount for an DELETE
         # This might not always be what you need / want
         result = cursor.rowcount
+    except mariadb.OperationalError:
+        print('Something is wrong with the db!')
+    except mariadb.ProgrammingError:
+        print('Error running DB query')
     except:
         traceback.print_exc()
         print("DO BETTER ERROR CATCHING")
@@ -99,6 +111,10 @@ def run_update_statement(sql, params):
         # In this example we always return the rowcount for an UPDATE
         # This might not always be what you need / want
         result = cursor.rowcount
+    except mariadb.OperationalError:
+        print('Something is wrong with the db!')
+    except mariadb.ProgrammingError:
+        print('Error running DB query')
     except:
         traceback.print_exc()
         print("DO BETTER ERROR CATCHING")
